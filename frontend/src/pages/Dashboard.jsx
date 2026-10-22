@@ -1,0 +1,12 @@
+import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
+import axiosClient from '../api/axiosClient'
+import { useAuth } from '../context/AuthContext'
+export default function Dashboard(){
+ const {user}=useAuth();const [stats,setStats]=useState(null);const [error,setError]=useState('')
+ useEffect(()=>{if(user&&['HR','ADMIN'].includes(user.role))axiosClient.get('/analytics/summary').then(r=>setStats(r.data)).catch(e=>setError(e.response?.data?.detail||'Unable to load analytics'))},[user])
+ if(!user)return <div className="hero panel"><div className="eyebrow">PEOPLE · PROCESS · PROGRESS</div><h1>People operations, made simpler.</h1><p>Manage attendance, leave requests, payroll and employee records in one workspace.</p><Link className="primary inline-button" to="/login">Sign in to continue</Link></div>
+ return <div className="page"><div className="welcome"><div><div className="eyebrow">WORKSPACE OVERVIEW</div><h1>Good day, {user.username}</h1><p className="muted">Your WorkSphere HRMS workspace is ready.</p></div><span className="role-pill">{user.role}</span></div>
+ {['HR','ADMIN'].includes(user.role)?<><div className="stats">{[['Total employees',stats?.total_employees??'—'],['Active employees',stats?.active_employees??'—'],['Pending leaves',stats?.pending_leaves??'—'],['Payroll total',stats?`₹${Number(stats.payroll_total).toLocaleString('en-IN')}`:'—']].map(([label,value])=><div className="panel stat" key={label}><span>{label}</span><strong>{value}</strong><small>Current system data</small></div>)}</div>{error&&<div className="error">{error}</div>}</>:<div className="panel callout"><h2>Your employee workspace</h2><p>Access your personal profile, attendance, leave balances and payslips.</p><Link className="primary inline-button" to="/portal">Open employee portal</Link></div>}
+ <h2 className="section-title">Quick access</h2><div className="quick-grid">{[['Attendance','Check in/out and review history','/attendance'],['Leave management','Apply and track leave requests','/leaves'],['Payroll','View monthly salary breakdown','/payroll'],...( ['HR','ADMIN'].includes(user.role)?[['Employees','Manage employee profiles','/employees']]:[]),...(user.role==='ADMIN'?[['User administration','Assign roles and manage access','/admin']]:[]),['Self-service portal','Your employee overview','/portal']].map(([title,desc,url])=><Link className="panel quick-card" to={url} key={title}><h3>{title} ↗</h3><p className="muted">{desc}</p></Link>)}</div></div>
+}

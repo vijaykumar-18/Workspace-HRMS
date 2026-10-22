@@ -1,0 +1,9 @@
+import { useEffect, useState } from 'react'
+import axiosClient from '../api/axiosClient'
+export default function AttendanceDashboard(){
+ const [rows,setRows]=useState([]);const [message,setMessage]=useState('');const [error,setError]=useState('')
+ async function load(){try{const r=await axiosClient.get('/attendance/my');setRows(r.data)}catch(e){setError(e.response?.data?.detail||'Could not load attendance')}}
+ useEffect(()=>{load()},[])
+ async function action(type){setMessage('');setError('');try{const r=await axiosClient.post(`/attendance/${type}`);setMessage(r.data.message+(r.data.is_late?' — Late arrival recorded.':r.data.working_hours!==undefined?` — ${r.data.working_hours} working hours.`:''));load()}catch(e){setError(e.response?.data?.detail||'Action failed')}}
+ return <div className="page"><div className="eyebrow">TIME & ATTENDANCE</div><h1>Attendance dashboard</h1><p className="muted">One check-in and check-out per day. Late arrival is flagged after 09:30.</p><div className="panel action-panel"><div><h2>Today's attendance</h2><p className="muted">Remember to check out before leaving.</p></div><div className="button-row"><button className="primary" onClick={()=>action('check-in')}>Check in</button><button className="secondary" onClick={()=>action('check-out')}>Check out</button></div></div>{message&&<div className="success">{message}</div>}{error&&<div className="error">{error}</div>}<section className="panel table-panel"><h2>Attendance history</h2><div className="table-scroll"><table><thead><tr>{['Date','Check in','Check out','Status','Late','Hours'].map(x=><th key={x}>{x}</th>)}</tr></thead><tbody>{rows.length?rows.map(r=><tr key={r.id}><td>{r.date}</td><td>{r.check_in||'—'}</td><td>{r.check_out||'—'}</td><td><span className="status">{r.status}</span></td><td>{r.is_late?'Late':'On time'}</td><td>{r.working_hours}</td></tr>):<tr><td colSpan="6">No attendance history yet.</td></tr>}</tbody></table></div></section></div>
+}
